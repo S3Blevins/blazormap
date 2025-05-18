@@ -1,0 +1,39 @@
+﻿@inject IJSRuntime JSRuntime
+@inject HttpClient Http
+@implements IAsyncDisposable
+
+<div id="map" style="width:100vw; height:95vh;" @onmousemove="UpdateValue"></div>
+<div>@pos</div>
+
+@code {
+    private IJSObjectReference? module;
+    private string pos = string.Empty;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            module = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./JsWrappers/LeafletWrapper.js");
+            if (module != null)
+            {
+                await module.InvokeAsync<string>("load_map");
+            }
+        }
+    }
+
+    public async void UpdateValue()
+    {
+        if (module != null)
+        {
+            pos = await module.InvokeAsync<string>("on_move");
+        }
+    }
+
+    async ValueTask IAsyncDisposable.DisposeAsync()
+    {
+        if (module is not null)
+        {
+            await module.DisposeAsync();
+        }
+    }
+}
